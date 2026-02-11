@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: sales-predictor-pipeline # executable id, debe ser único en todos tus workflows
+  name: sales-predictor-pipeline # executable id, debe ser único
   annotations:
     scenarios.ai.sap.com/description: "Predictor de ventas usando datos de PostgreSQL"
     scenarios.ai.sap.com/name: "Sales Performance Predictor" # Nombre del escenario
@@ -13,50 +13,56 @@ metadata:
     ai.sap.com/version: "1.0"
 spec:
   imagePullSecrets:
-    - name: credstutorialrepo # Tu docker registry secret (lo configuraremos después)
+    - name: credstutorialrepo # Tu docker registry secret
   entrypoint: mypipeline
   arguments:
-    parameters: # Placeholders para parámetros
-      - name: DT_MAX_DEPTH # Hiperparámetro del modelo
+    parameters: # Placeholders para inputs tipo string
+      # Hiperparámetros del modelo
+      - name: DT_MAX_DEPTH # Profundidad máxima del árbol
+      
+      # Credenciales de PostgreSQL
       - name: DB_HOST # Host de PostgreSQL
-      - name: DB_PORT # Puerto de PostgreSQL
+      - name: DB_PORT # Puerto de PostgreSQL (ej: "5432")
       - name: DB_NAME # Nombre de la base de datos
       - name: DB_USER # Usuario de PostgreSQL
       - name: DB_PASSWORD # Contraseña de PostgreSQL
-      - name: DB_SCHEMA # Schema de la base de datos
+      - name: DB_SCHEMA # Schema (ej: "public")
   templates:
   - name: mypipeline
     steps:
-    - - name: train-sales-predictor
-        template: training-step
-  - name: training-step
+    - - name: mypredictor
+        template: mycodeblock1
+  - name: mycodeblock1
+    metadata:
+      labels:
+        ai.sap.com/resourcePlan: starter # Plan de recursos (starter, basic, etc.)
     outputs:
       artifacts:
         - name: salespredictor-model # Identificador local del modelo
-          globalName: salesmodel # Nombre global del artefacto
-          path: /app/model/ # Carpeta en Docker de donde copiar el modelo
+          globalName: salesmodel # Nombre global del artefacto generado
+          path: /app/model/ # Carpeta del Docker de donde copiar
           archive:
             none: {} # No comprimir al subir a S3
     container:
-      image: docker.io/joshrh2603/sales-predictor-postgres:01 # Tu imagen Docker
+      image: docker.io/<YOUR_DOCKER_USERNAME>/sales-predictor-postgres:01 # Tu imagen Docker
       command: ["/bin/sh", "-c"]
       env:
-        # Hiperparámetros del modelo
+        # Hiperparámetro del modelo
         - name: DT_MAX_DEPTH
-          value: "{{workflow.parameters.DT_MAX_DEPTH}}"
+          value: "{{workflow.parameters.DT_MAX_DEPTH}}" # Lee del placeholder
         
         # Credenciales de PostgreSQL
         - name: DB_HOST
-          value: "{{workflow.parameters.DB_HOST}}"
+          value: "{{workflow.parameters.DB_HOST}}" # Lee del placeholder
         - name: DB_PORT
-          value: "{{workflow.parameters.DB_PORT}}"
+          value: "{{workflow.parameters.DB_PORT}}" # Lee del placeholder
         - name: DB_NAME
-          value: "{{workflow.parameters.DB_NAME}}"
+          value: "{{workflow.parameters.DB_NAME}}" # Lee del placeholder
         - name: DB_USER
-          value: "{{workflow.parameters.DB_USER}}"
+          value: "{{workflow.parameters.DB_USER}}" # Lee del placeholder
         - name: DB_PASSWORD
-          value: "{{workflow.parameters.DB_PASSWORD}}"
+          value: "{{workflow.parameters.DB_PASSWORD}}" # Lee del placeholder
         - name: DB_SCHEMA
-          value: "{{workflow.parameters.DB_SCHEMA}}"
+          value: "{{workflow.parameters.DB_SCHEMA}}" # Lee del placeholder
       args:
         - "python /app/src/main.py"
