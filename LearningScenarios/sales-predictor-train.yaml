@@ -1,0 +1,62 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: sales-predictor-pipeline # executable id, debe ser único en todos tus workflows
+  annotations:
+    scenarios.ai.sap.com/description: "Predictor de ventas usando datos de PostgreSQL"
+    scenarios.ai.sap.com/name: "Sales Performance Predictor" # Nombre del escenario
+    executables.ai.sap.com/description: "Entrenamiento con datos de PostgreSQL"
+    executables.ai.sap.com/name: "training-postgres" # Nombre del ejecutable
+    artifacts.ai.sap.com/salesmodel.kind: "model" # Tipo de artefacto que genera
+  labels:
+    scenarios.ai.sap.com/id: "sales-prediction-postgres"
+    ai.sap.com/version: "1.0"
+spec:
+  imagePullSecrets:
+    - name: credstutorialrepo # Tu docker registry secret (lo configuraremos después)
+  entrypoint: mypipeline
+  arguments:
+    parameters: # Placeholders para parámetros
+      - name: DT_MAX_DEPTH # Hiperparámetro del modelo
+      - name: DB_HOST # Host de PostgreSQL
+      - name: DB_PORT # Puerto de PostgreSQL
+      - name: DB_NAME # Nombre de la base de datos
+      - name: DB_USER # Usuario de PostgreSQL
+      - name: DB_PASSWORD # Contraseña de PostgreSQL
+      - name: DB_SCHEMA # Schema de la base de datos
+  templates:
+  - name: mypipeline
+    steps:
+    - - name: train-sales-predictor
+        template: training-step
+  - name: training-step
+    outputs:
+      artifacts:
+        - name: salespredictor-model # Identificador local del modelo
+          globalName: salesmodel # Nombre global del artefacto
+          path: /app/model/ # Carpeta en Docker de donde copiar el modelo
+          archive:
+            none: {} # No comprimir al subir a S3
+    container:
+      image: docker.io/joshrh2603/sales-predictor-postgres:01 # Tu imagen Docker
+      command: ["/bin/sh", "-c"]
+      env:
+        # Hiperparámetros del modelo
+        - name: DT_MAX_DEPTH
+          value: "{{workflow.parameters.DT_MAX_DEPTH}}"
+        
+        # Credenciales de PostgreSQL
+        - name: DB_HOST
+          value: "{{workflow.parameters.DB_HOST}}"
+        - name: DB_PORT
+          value: "{{workflow.parameters.DB_PORT}}"
+        - name: DB_NAME
+          value: "{{workflow.parameters.DB_NAME}}"
+        - name: DB_USER
+          value: "{{workflow.parameters.DB_USER}}"
+        - name: DB_PASSWORD
+          value: "{{workflow.parameters.DB_PASSWORD}}"
+        - name: DB_SCHEMA
+          value: "{{workflow.parameters.DB_SCHEMA}}"
+      args:
+        - "python /app/src/main.py"
