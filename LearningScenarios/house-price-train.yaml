@@ -8,9 +8,10 @@ metadata:
     executables.ai.sap.com/description: "Train with live data"
     executables.ai.sap.com/name: "training"
     artifacts.ai.sap.com/housedataset.kind: "dataset"
+    artifacts.ai.sap.com/housemodel.kind: "model"
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "1.0"
+    ai.sap.com/version: "2.0"
 
 spec:
   imagePullSecrets:
@@ -28,8 +29,6 @@ spec:
         template: mycodeblock1
 
   - name: mycodeblock1
-
-    # 👇 AQUÍ agregas el resource plan
     metadata:
       labels:
         ai.sap.com/resourcePlan: starter
@@ -38,6 +37,14 @@ spec:
       artifacts:
         - name: housedataset
           path: /app/data/
+
+    outputs:
+      artifacts:
+        - name: housepricemodel
+          globalName: housemodel
+          path: /app/model/
+          archive:
+            none: {}
 
     container:
       image: docker.io/joshrh2603/house-price:03
@@ -49,3 +56,4 @@ spec:
 
       args:
         - "python /app/src/main.py"
+
