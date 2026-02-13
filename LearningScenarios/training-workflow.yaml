@@ -1,0 +1,45 @@
+# training-workflow.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: sales-forecasting-training
+  annotations:
+    scenarios.ai.sap.com/description: "Sales forecasting model training"
+    scenarios.ai.sap.com/name: "sales-forecasting"
+    executables.ai.sap.com/description: "Train sales forecast model"
+    executables.ai.sap.com/name: "training"
+  labels:
+    scenarios.ai.sap.com/id: "sales-forecasting"
+    ai.sap.com/version: "1.0"
+spec:
+  entrypoint: training
+  arguments:
+    parameters:
+    - name: data-path
+      value: "s3://sales-bucket-predictor/sap-ai-core/sales-data/"
+  templates:
+  - name: training
+    inputs:
+      parameters:
+      - name: data-path
+    outputs:
+      artifacts:
+      - name: model
+        path: /mnt/models/
+    container:
+      image: your-registry/sales-forecasting-train:v1
+      env:
+      - name: DATA_PATH
+        value: "{{inputs.parameters.data-path}}"
+      - name: MODEL_PATH
+        value: "/mnt/models"
+      volumeMounts:
+      - name: data
+        mountPath: /mnt/data
+      - name: models
+        mountPath: /mnt/models
+  volumes:
+  - name: data
+    emptyDir: {}
+  - name: models
+    emptyDir: {}
