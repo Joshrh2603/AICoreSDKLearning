@@ -1,0 +1,75 @@
+apiVersion: ai.sap.com/v1alpha1
+kind: ServingTemplate
+metadata:
+  name: server-pipeline-combined
+  annotations:
+    scenarios.ai.sap.com/description: "House price prediction with integrated training"
+    scenarios.ai.sap.com/name: "House Price (Tutorial)"
+    executables.ai.sap.com/description: "Combined training and serving endpoint"
+    executables.ai.sap.com/name: "server-combined"
+    artifacts.ai.sap.com/housedataset.kind: "dataset"
+  labels:
+    scenarios.ai.sap.com/id: "learning-datalines"
+    ai.sap.com/version: "5.0"
+spec:
+  inputs:
+    artifacts:
+      - name: housedataset
+    parameters:
+      - name: greetmessage
+        type: string
+      - name: DT_MAX_DEPTH
+        type: string
+  template:
+    apiVersion: "serving.kserve.io/v1beta1"
+    metadata:
+      annotations: |
+        autoscaling.knative.dev/metric: concurrency
+        autoscaling.knative.dev/target: 1
+        autoscaling.knative.dev/targetBurstCapacity: 0
+      labels: |
+        ai.sap.com/resourcePlan: starter
+    spec: |
+      predictor:
+        imagePullSecrets:
+          - name: sap-test
+        minReplicas: 1
+        maxReplicas: 3
+        containers:
+        - name: kserve-container
+          image: "docker.io/joshrh2603/house-combined:01"
+          ports:
+            - containerPort: 9001
+              protocol: TCP
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              set -e && echo "Starting combined service" && gunicorn --chdir /app/src main:app -b 0.0.0.0:9001 --timeout 300 --preload
+          env:
+            - name: STORAGE_URI
+              value: "{{inputs.artifacts.housedataset}}"
+            - name: greetingmessage
+              value: "{{inputs.parameters.greetmessage}}"
+            - name: DT_MAX_DEPTH
+              value: "{{inputs.parameters.DT_MAX_DEPTH}}"
+            - name: TRAIN_MODE
+              value: "true"
+          volumeMounts:
+            - mountPath: /app/data
+              name: data-volume
+        initContainers:
+        - name: data-loader
+          image: "docker.io/joshrh2603/house-combined:01"
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              echo "Copying dataset..." &&
+              cp -r {{inputs.artifacts.housedataset}}/* /app/data/ &&
+              echo "Dataset copied successfully" &&
+              ls -la /app/data/
+          volumeMounts:
+            - mountPath: /app/data
+              name: data-volume
+        volumes:
+        - name: data-volume
+          emptyDir: {}
