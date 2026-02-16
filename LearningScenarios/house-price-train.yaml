@@ -8,12 +8,13 @@ metadata:
     executables.ai.sap.com/description: "Train with live data"
     executables.ai.sap.com/name: "training"
     artifacts.ai.sap.com/housedataset.kind: "dataset"
+    artifacts.ai.sap.com/housemodel.kind: "model"
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "1.0"
+    ai.sap.com/version: "2.0"
 spec:
   imagePullSecrets:
-    - name: sap-test
+    - name: saptest
   entrypoint: mypipeline
   arguments:
     parameters:
@@ -26,13 +27,17 @@ spec:
             template: mycodeblock1
 
     - name: mycodeblock1
-      metadata:
-        labels:
-          ai.sap.com/resourcePlan: starter
       inputs:
         artifacts:
           - name: housedataset
             path: /app/data/
+      outputs:
+        artifacts:
+          - name: housepricemodel2
+            globalName: housemodel2
+            path: /app/model/
+            archive:
+              none: {}
       container:
         image: docker.io/joshrh2603/house-price:11
         command: ["/bin/sh", "-c"]
@@ -41,3 +46,4 @@ spec:
             value: "{{workflow.parameters.DT_MAX_DEPTH}}"
         args:
           - "python /app/src/main.py"
+
