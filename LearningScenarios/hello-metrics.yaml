@@ -1,53 +1,40 @@
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
-  name: house-metrics-train
+  name: house-metrics-train # executable id, must be unique across all your workflows (YAML files)
   annotations:
     scenarios.ai.sap.com/description: "Learning how to ingest data to workflows"
-    scenarios.ai.sap.com/name: "House Price (Tutorial)"
+    scenarios.ai.sap.com/name: "House Price (Tutorial)" # Scenario name should be the use case
     executables.ai.sap.com/description: "Generate metrics"
-    executables.ai.sap.com/name: "training-metrics"
-    artifacts.ai.sap.com/housedataset.kind: "dataset"
-    artifacts.ai.sap.com/housemodel.kind: "model"
+    executables.ai.sap.com/name: "training-metrics" # Executable name should describe the workflow in the use case
+    artifacts.ai.sap.com/housedataset.kind: "dataset" # Helps in suggesting the kind of artifact that can be attached.
+    artifacts.ai.sap.com/housemodel.kind: "model" # Helps in suggesting the kind of artifact that can be generated.
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "6.0"
-
+    ai.sap.com/version: "2.0"
 spec:
   imagePullSecrets:
-    - name: sap-test
+    - name: sap-test # your docker registry secret
   entrypoint: mypipeline
-
   arguments:
-    parameters:
-      - name: DT_MAX_DEPTH
-
+    parameters: # placeholder for string like inputs
+        - name: DT_MAX_DEPTH # identifier local to this workflow
   templates:
-
   - name: mypipeline
     steps:
-      - - name: mypredictor
-          template: mycodeblock1
-
+    - - name: mypredictor
+        template: mycodeblock1
   - name: mycodeblock1
     inputs:
-      artifacts:
-        - name: housedataset
-          path: /app/data/
-
-    outputs:
-      artifacts:
-        - name: housepricemodel
-          globalName: housemodel
-          path: /mnt/models
-          archive:
-            none: {}
-
+      artifacts:  # placeholder for cloud storage attachements
+        - name: housedataset # a name for the placeholder
+          path: /app/data/ # where to copy in the Dataset in the Docker image
     container:
-      image: docker.io/joshrh2603/house-price:06
+      image: docker.io/joshrh2603/house-price:04 # Your docker image name
       command: ["/bin/sh", "-c"]
       env:
-        - name: DT_MAX_DEPTH
-          value: "{{workflow.parameters.DT_MAX_DEPTH}}"
+        - name: DT_MAX_DEPTH # name of the environment variable inside Docker container
+          value: "{{workflow.parameters.DT_MAX_DEPTH}}" # value to set from local (to workflow) variable DT_MAX_DEPTH
       args:
         - "python /app/src/main.py"
+
