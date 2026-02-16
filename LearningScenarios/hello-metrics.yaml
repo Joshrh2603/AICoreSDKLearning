@@ -11,7 +11,7 @@ metadata:
     artifacts.ai.sap.com/housemodel.kind: "model" # Helps in suggesting the kind of artifact that can be generated.
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "3.0"
+    ai.sap.com/version: "2.0"
 spec:
   imagePullSecrets:
     - name: sap-test # your docker registry secret
@@ -31,8 +31,8 @@ spec:
           path: /app/data/ # where to copy in the Dataset in the Docker image
     outputs:
       artifacts:
-        - name: housepricemodel2 # name of the artifact generated, and folder name when placed in S3, complete directory will be `../<executaion_id>/housepricemodel`
-          globalName: housemodel2 # local identifier name to the workflow, also used above in annotation
+        - name: housepricemodel # name of the artifact generated, and folder name when placed in S3, complete directory will be `../<executaion_id>/housepricemodel`
+          globalName: housemodel # local identifier name to the workflow, also used above in annotation
           path: /app/model/ # from which folder in docker image (after running workflow step) copy contents to cloud storage
           archive:
             none:   # specify not to compress while uploading to cloud
@@ -45,4 +45,3 @@ spec:
           value: "{{workflow.parameters.DT_MAX_DEPTH}}" # value to set from local (to workflow) variable DT_MAX_DEPTH
       args:
         - "python /app/src/main.py"
-
