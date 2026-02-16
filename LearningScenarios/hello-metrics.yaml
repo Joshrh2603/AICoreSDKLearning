@@ -11,26 +11,40 @@ metadata:
     artifacts.ai.sap.com/housemodel.kind: "model"
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "3.0"
+    ai.sap.com/version: "6.0"
+
 spec:
   imagePullSecrets:
     - name: sap-test
   entrypoint: mypipeline
+
   arguments:
     parameters:
-        - name: DT_MAX_DEPTH
+      - name: DT_MAX_DEPTH
+
   templates:
+
   - name: mypipeline
     steps:
-    - - name: mypredictor
-        template: mycodeblock1
+      - - name: mypredictor
+          template: mycodeblock1
+
   - name: mycodeblock1
     inputs:
       artifacts:
         - name: housedataset
           path: /app/data/
+
+    outputs:
+      artifacts:
+        - name: housepricemodel
+          globalName: housemodel
+          path: /mnt/models
+          archive:
+            none: {}
+
     container:
-      image: docker.io/joshrh2603/house-price:05  # Incrementa la versión
+      image: docker.io/joshrh2603/house-price:06
       command: ["/bin/sh", "-c"]
       env:
         - name: DT_MAX_DEPTH
