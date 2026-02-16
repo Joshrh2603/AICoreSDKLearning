@@ -11,7 +11,7 @@ metadata:
     artifacts.ai.sap.com/housemodel.kind: "model"
   labels:
     scenarios.ai.sap.com/id: "learning-datalines"
-    ai.sap.com/version: "8.0"
+    ai.sap.com/version: "7.0"
 
 spec:
   imagePullSecrets:
@@ -47,7 +47,7 @@ spec:
             none: {}
 
     container:
-      image: docker.io/joshrh2603/house-price:07
+      image: docker.io/joshrh2603/house-price:08
       command: ["/bin/sh", "-c"]
 
       env:
